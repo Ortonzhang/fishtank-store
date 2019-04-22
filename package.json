@@ -1,0 +1,73 @@
+{
+  "name": "fishtank-admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve --port=8081",
+    "build": "vue-cli-service build",
+    "test": "vue-cli-service build --mode test --report",
+    "lint": "vue-cli-service lint",
+    "qa": "npm run test && scp -r ./dist/* root@192.168.49.75:/opt/soft/html",
+    "www": "sh deploy.sh"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "countup": "^1.8.2",
+    "dayjs": "^1.8.11",
+    "echarts": "^4.2.0-rc.2",
+    "element-ui": "^2.4.11",
+    "iview": "^3.4.0",
+    "js-cookie": "^2.2.0",
+    "mockjs": "^1.0.1-beta3",
+    "nprogress": "^0.2.0",
+    "qs": "^6.6.0",
+    "vue": "^2.5.21",
+    "vue-json-viewer": "^2.1.0",
+    "vue-router": "^3.0.2",
+    "vueditor": "^0.3.1",
+    "vuex": "^3.0.1",
+    "vuex-persistedstate": "^2.5.4"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.0.5",
+    "@vue/cli-plugin-eslint": "^3.0.5",
+    "@vue/cli-service": "^3.0.5",
+    "@vue/eslint-config-prettier": "^4.0.1",
+    "babel-eslint": "^10.0.1",
+    "babel-plugin-import": "^1.11.0",
+    "eslint": "^5.8.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "node-sass": "^4.9.0",
+    "pug": "^2.0.3",
+    "pug-plain-loader": "^1.0.0",
+    "sass-loader": "^7.0.1",
+    "vue-template-compiler": "^2.5.21"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "@vue/prettier"
+    ],
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": "off"
+    },
+    "parserOptions": {
+      "parser": "babel-eslint"
+    }
+  },
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 8"
+  ]
+}

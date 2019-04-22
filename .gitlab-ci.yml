@@ -1,0 +1,106 @@
+stages:
+    - dev
+    - test
+    - master
+
+# 定义变量
+variables:
+    releaseGit: git@gitlab.mljr.com:FEWeb-release-group/fishtank-admin.git
+    # 测试服务上的静态资源路径
+    STATIC_PATH: /opt/soft/tengine/html/mljr/
+    # 同步至104
+    SYNC_104: rsync -auvzP --delete ./dist/$CI_PROJECT_NAME $STATIC_PATH
+    # 同步至133
+    SYNC_133: rsync -auvzP --delete ./dist/$CI_PROJECT_NAME root@192.168.49.133:$STATIC_PATH
+    # 同步至147
+    SYNC_147: rsync -auvzP --delete ./dist/$CI_PROJECT_NAME root@192.168.49.147:$STATIC_PATH
+# 缓存
+cache:
+    untracked: true
+    paths:
+        - node_modules/
+
+# 运行脚本前的操作
+before_script:
+    - whoami
+    - pwd
+    # 获取当前fetch的文件列表，并检查是否有^package 相关文件
+    - PACKAGE=$(git diff --name-only HEAD@{0} HEAD@{1} | grep '^\<package' || echo '')
+    # 如果没有node_modules目录，则无缓存，一般为当前分支首次编译，需先执行 npm install
+    # 如果存在node_modules目录，且package相关文件有更新，则需先执行 npm install
+    - test ! -d node_modules || test -n "$PACKAGE" && npm install
+
+
+# 手动部署
+dev:
+    stage: dev
+    script:
+        - echo 'dev'
+        - npm run test
+        # 同步至104
+        - $SYNC_104
+        # 同步至133
+        # - $SYNC_133
+        # 同步至147
+        # - $SYNC_147
+    except:
+        - test
+        - master
+    # 需要手动执行
+    when: manual
+
+
+# 自动部署
+test:
+    stage: test
+    script:
+        - echo 'test'
+        - npm run test
+        # 同步至104
+        - $SYNC_104
+        # 同步至133
+        # - $SYNC_133
+        # 同步至147
+        # - $SYNC_147
+    only:
+        - test
+
+
+# 上线
+master:
+    stage: master
+    script:
+        - echo 'master'
+        # 先编译
+        - npm run build
+
+          # 万一没有编译成功，在此退出
+        - test ! -d dist/fishtank-admin && echo 'no dist/fishtank-admin directory' && exit
+
+        - cd ./dist
+
+          # fishtank-admin-release为发布所用的目录，如已存在，则先进行删除操作
+        - test -d fishtank-admin-release && rm -rf fishtank-admin-release
+
+          # 先拉取releaseGit 至 fishtank-admin-release目录，并清空目录
+        - git clone $releaseGit fishtank-admin-release && rm -rf fishtank-admin-release/*
+
+          # 将fishtank-admin中的所有文件复制至fishtank-admin-release目录
+        - cp -R fishtank-admin/* fishtank-admin-release/
+
+        - cd fishtank-admin-release
+
+        # 在当前目录设置git提交的用户名
+        - git config user.name ${GITLAB_USER_EMAIL}
+        - git config user.email ${GITLAB_USER_EMAIL}
+        - echo ${GITLAB_USER_EMAIL}
+          # 正常push及打tag操作
+        - git add . && git commit -m 'Auto-commit' && git push
+          # tag
+        - git tag 'www/'$(date +"%Y-%m-%d.%H%M") && git push --tags
+    only:
+        - master
+    # 需要手动执行
+    when: manual
+    # environment:
+        # name: production
