@@ -91,7 +91,6 @@ export default {
     },
     changePage(value) {
       this.form.page = value;
-
       this.getList();
     },
     optypelabelclick(json) {
