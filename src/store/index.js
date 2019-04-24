@@ -21,6 +21,8 @@ import dashboardStore from "./modules/dashboard";
 // system
 import settingStore from "./modules/system/setting";
 import versionStore from "./modules/system/version";
+import logsStore from "./modules/system/logs";
+
 Vue.use(Vuex);
 
 const store = new Vuex.Store({
@@ -32,6 +34,7 @@ const store = new Vuex.Store({
     settingStore,
     messageStore,
     versionStore,
+    logsStore,
     depositRewardStore,
     orderStore,
     userStore

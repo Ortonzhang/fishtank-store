@@ -14,7 +14,7 @@ import "./components";
 import "./components/ueditor";
 Vue.use(iView);
 Vue.mixin(mixins);
-// Vue.use(JsonViewer);
+Vue.use(JsonViewer);
 Vue.config.productionTip = false;
 
 Vue.config.errorHandler = err => {

@@ -1,116 +1,103 @@
 <template lang="pug">
-  el-card.other-version
-    .clearfix(slot='header')
+  Card.system-version
+    .clearfix(slot='title')
       span 日志列表
-    el-form.demo-form-inline(:inline='true', :model='form')
-      el-form-item(label='操作用户')
-        el-select(v-model='form.employeeId', placeholder='请选择操作用户', clearable)
-          el-option(v-for="item in employeeIdList", :label='item.name', :value='item.value', :key='item.value')
-      el-form-item(label='操作时间')
-        el-date-picker(
-            v-model='time',
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="yyyy-MM-dd",
+    .div(style="padding: 20px")
+      Form(inline, :model="form", :label-width="100")
+        FormItem(label="操作模块：")
+          Select(
+            clearable,
+            v-model="form.bizType"
+            :style="{width: '200px'}"
           )
-      el-form-item(label='操作行为')
-        el-select(v-model='form.opType', placeholder='请选择操作行为', clearable)
-          el-option(v-for="item in opTypeList", :label='item.name', :value='item.value', :key="item.value")
-      el-form-item(label='操作模块')
-        el-select(v-model='form.bizType', placeholder='请选择操作行为', clearable)
-          el-option(v-for="item in bizTypeList", :label='item.name', :value='item.value', :key="item.value")
-      el-form-item(label='数据ID')
-        el-input(v-model='form.dataId', placeholder='请输入数据ID',)
-      el-form-item
-        el-button(type='primary', @click='getList') 查询
-    el-table(:data='otherLogsList', border, style="margin-top: 20px")
-      el-table-column(prop='id', label='ID')
-      el-table-column(prop='dataId', label='数据ID')
-      el-table-column(prop='employeeName', label='操作用户')
-      el-table-column(prop='opTypeLabel', label='操作行为')
-      el-table-column(prop='bizTypeLabel', label='操作模块')
-      el-table-column(label='操作具体事项', width="400px")
-        template(slot-scope="scope")
-          div 
-            | {{ scope.row.description }}
-            i.el-icon-warning(@click="showDialog(scope.row.rawData)", style="color: rgb(235, 160, 71); margin-left: 10px; cursor: pointer")
-      el-table-column(label='操作时间')
-        template(slot-scope='scope')
-          div {{ scope.row.created | dateHMS  }}
-    el-pagination(layout='prev, pager, next', :total='otherLogsCount', @current-change="handleCurrentChange")
-    el-dialog(title='操作json', :visible.sync='dialogVisible', width='30%', :before-close='handleClose')
-      json-viewer(:value='jsonView', :expand-depth='5', copyable, boxed, sort)
-      //- pre.jsonView
-      //-   | {{ jsonView }}
-      //- span.dialog-footer(slot='footer')
-        el-button(@click='dialogVisible = false') 取 消
-        el-button(type='primary', @click='dialogVisible = false') 确 定
-
+            Option(v-for="item in logbizTypeList", :key="item.value", :value="item.value") {{ item.name }}
+        FormItem(label="操作类型")
+          Select(
+            clearable,
+            v-model="form.opType"
+            :style="{width: '200px'}"
+          )
+            Option(v-for="item in logOpTypeList", :key="item.value", :value="item.value") {{ item.name }}
+        FormItem(label="员工ID")
+          Input(placeholder="请输入用户手机号", v-model="form.adminId")
+        FormItem.content-left-20
+          Button(type='primary', @click='serch') 查询
+        Table(border :columns="columns" :data="logList")
+          template(slot-scope="{row, index}" slot="created")
+            div {{ row.created | dateHMS }}
+          template(slot-scope="{row, index}" slot="opTypeLabel")
+            div(@click="optypelabelclick(row.rawData)")
+              span {{row.opTypeLabel}}
+              Icon(type="md-arrow-dropdown")
+        div(style='margin: 10px;overflow: hidden')
+          div(style='float: right;')
+            Page(:total='logCount', :current='form.page', @on-change='changePage')
+        Modal(
+          v-model="modal"
+          :title="modalTitle"
+          :mask-closable="false"
+        )
+          json-viewer(:value="jsonview",:expand-depth='5', copyable, boxed, sort)
 </template>
 <script>
 import { mapGetters } from "vuex";
+import { thisExpression } from "babel-types";
 export default {
-  name: "otherVersion",
+  name: "systemLogs",
   data() {
     return {
       form: {
         bizType: "",
         opType: "",
-        employeeId: "",
+        adminId: "",
         page: 1,
-        pageSize: 10,
-        start: "",
-        end: "",
-        dataId: ""
+        pageSize: 10
       },
-      bizTypeList: [],
-      opTypeList: [],
-      employeeIdList: [],
-      time: "",
-      jsonView: "",
-      dialogVisible: false
+      columns: [
+        { title: "序号", key: "id" },
+        { title: "操作用户", key: "adminName" },
+        { title: "操作模块", key: "bizType" },
+        { title: "操作行为", key: "description" },
+        { title: "操作具体事项", slot: "opTypeLabel" },
+        { title: "操作时间", slot: "created" }
+      ],
+      jsonview: "",
+      modal: false,
+      modalTitle: ""
     };
   },
+
   computed: {
-    ...mapGetters(["otherLogsList", "otherLogsCount"])
+    ...mapGetters(["logList", "logbizTypeList", "logOpTypeList", "logCount"])
+  },
+  mounted() {
+    this.getBizType();
+    this.getOpType();
+    this.getList();
   },
   methods: {
-    async getList() {
-      await this.$store.dispatch("employeeOpLogList", this.form);
+    serch() {
+      this.form.page = 1;
+      this.getList();
     },
-    handleCurrentChange(value) {
+    async getList() {
+      await this.$store.dispatch("getlogList", this.form);
+    },
+    getBizType() {
+      this.$store.dispatch("getlogbizTypeList");
+    },
+    getOpType() {
+      this.$store.dispatch("getlogOpTypeList");
+    },
+    changePage(value) {
       this.form.page = value;
       this.getList();
     },
-    showDialog(str) {
-      this.jsonView = JSON.parse(str);
-      this.dialogVisible = true;
-    },
-    handleClose() {
-      this.dialogVisible = false;
-    }
-  },
-  async mounted() {
-    this.getList();
-    this.employeeIdList = await this.$store.dispatch(
-      "allEmployeeNameValueList"
-    );
-    this.opTypeList = await this.$store.dispatch("employeeOpTypeList");
-    this.bizTypeList = await this.$store.dispatch("employeeBizTypeList");
-  },
-  watch: {
-    time: function(value) {
-      Array.isArray(value)
-        ? (() => {
-            this.form.start = value[0];
-            this.form.end = value[1];
-          })()
-        : (() => {
-            this.form.start = "";
-            this.form.end = "";
-          })();
+    optypelabelclick(json) {
+      let obj = JSON.parse(json);
+      this.jsonview = obj;
+      this.modal = true;
+      this.modalTitle = "操作Json";
     }
   }
 };
